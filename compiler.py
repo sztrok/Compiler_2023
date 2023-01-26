@@ -1,24 +1,14 @@
 from memory import Memory
 
 
-# class Procedure:
-#     def __init__(self, proc_name, commands):
-#         self.proc_name = proc_name
-#         self.commands = commands
-#
-
 class Compiler:
     def __init__(self, procedures, main_prog, tokens):
         self.tokens = tokens
-        for tok in tokens:
-            print(tok)
-        print("---------------------")
-        for tok in tokens:
-            print(tok)
         self.procedures = procedures
         self.main_prog = main_prog
         self.commands = main_prog.commands
         self.memory = Memory()
+        self.check_semantic_errors()
         self.prepare_memory()
         self.memory.set_program_variable("Pj")
         self.memory.set_program_variable("Pi")
@@ -26,6 +16,170 @@ class Compiler:
         self.assembly = []
         self.compile_procedures()
         self.compile_main()
+
+    def check_semantic_errors(self):
+
+        procedures = []
+        for i in range(len(self.tokens)):
+            if self.tokens[i].type == 'PROCEDURE':
+                current_proc_usable_vars = []
+                procedure = []
+                i += 1
+                proc = [self.tokens[i].value, self.tokens[i]]
+                procedure.append(proc)
+                i += 1
+                proc_all_args = []
+                proc_all_decs = []
+                proc_all_used_vars = []
+                proc_all_set_vars = []
+                if self.tokens[i].type == '(':
+                    proc_args = []
+                    i += 1
+                    while self.tokens[i].type != ')':
+                        if self.tokens[i].type == 'IDENTIFIER':
+                            if self.tokens[i].value in current_proc_usable_vars:
+                                raise Exception(f"Powtorzenie deklaracji zmiennej {self.tokens[i].value}"
+                                                f" w sygnaturze funkcji {proc[0]}"
+                                                f" | line: {self.tokens[i].lineno}")
+                            current_proc_usable_vars.append(self.tokens[i].value)
+                            proc_args.append(self.tokens[i].value)
+                            proc_args.append(self.tokens[i])
+                            proc_all_args.append(proc_args)
+                            proc_all_set_vars.append(self.tokens[i].value)
+                            proc_args = []
+                        i += 1
+                i += 2
+
+                if self.tokens[i].type == 'VAR':
+                    proc_decs = []
+                    i += 1
+                    while self.tokens[i].type != 'BEGIN':
+                        if self.tokens[i].type == 'IDENTIFIER':
+                            if self.tokens[i].value in current_proc_usable_vars:
+                                raise Exception(f"Powtorzenie zmiennej {self.tokens[i].value}"
+                                                f" w deklaracji zmiennych funkcji {proc[0]}"
+                                                f" | line: {self.tokens[i].lineno}")
+                            current_proc_usable_vars.append(self.tokens[i].value)
+                            proc_decs.append(self.tokens[i].value)
+                            proc_decs.append(self.tokens[i])
+                            proc_all_decs.append(proc_decs)
+                            proc_decs = []
+                        i += 1
+                procedure.append(proc_all_args)
+                procedure.append(proc_all_decs)
+
+                procedures.append(procedure)
+                if self.tokens[i].type == 'BEGIN':
+                    i += 1
+                    while self.tokens[i].type != 'END':
+                        if self.tokens[i].type == 'IDENTIFIER':
+                            if self.tokens[i + 1].type == '(':
+                                proc_name_call = self.tokens[i].value
+                                proc_is_declared = False
+                                proc_call_index = None
+                                for obj in range(len(procedures) - 1):
+                                    if procedures[obj][0][0] == proc_name_call:
+                                        proc_is_declared = True
+                                        proc_call_index = obj
+                                        break
+                                if not proc_is_declared:
+                                    raise Exception(f"Procedura {proc_name_call} nie została zainicjalizowana"
+                                                    f" | line : {self.tokens[i].lineno}")
+                                i += 2
+                                proc_call_vars_amount = 0
+                                while self.tokens[i].type != ')':
+                                    if self.tokens[i].type == 'IDENTIFIER':
+                                        proc_all_used_vars.append(self.tokens[i])
+                                        if self.tokens[i].value in current_proc_usable_vars:
+                                            proc_call_vars_amount += 1
+                                        else:
+                                            raise Exception(f"Nie ma zmiennej {self.tokens[i].value}"
+                                                            f" w scopie procedury {procedure[0][0]} "
+                                                            f"| line: {self.tokens[i].lineno}")
+                                    i += 1
+                                if proc_call_vars_amount != len(procedures[proc_call_index][1]):
+                                    raise Exception(f"Zła ilość argumentów podanych w wywołaniu procedury "
+                                                    f"{procedures[proc_call_index][0][0]} "
+                                                    f"| line : {self.tokens[i].lineno}")
+                            else:
+                                if self.tokens[i+1].type == 'ASSIGN':
+                                    proc_all_set_vars.append(self.tokens[i].value)
+                                proc_all_used_vars.append(self.tokens[i])
+                                if self.tokens[i].value not in current_proc_usable_vars:
+                                    raise Exception(f"Nie ma zmiennej {self.tokens[i].value}"
+                                                    f" w scopie procedury {procedure[0][0]} "
+                                                    f"| line: {self.tokens[i].lineno}")
+
+                        i += 1
+
+                    for used in proc_all_used_vars:
+                        if used.value not in proc_all_set_vars:
+                            raise Exception(f"Użycie nie zainicjalizowanej zmiennej {used.value} "
+                                            f"| line : {used.lineno}")
+
+            if self.tokens[i].type == 'PROGRAM':
+                procedure = []
+                current_proc_usable_vars = []
+                proc = ['PROGRAM', self.tokens[i]]
+                procedure.append(proc)
+                i += 2
+                proc_all_decs = []
+                proc_decs = []
+                if self.tokens[i].value == 'VAR':
+                    main_decs = []
+                    i += 1
+                    while self.tokens[i].type != 'BEGIN':
+                        if self.tokens[i].type == 'IDENTIFIER':
+                            if self.tokens[i].value in current_proc_usable_vars:
+                                raise Exception(f"Powtorzenie zmiennej {self.tokens[i].value}"
+                                                f" w programie"
+                                                f" | line: {self.tokens[i].lineno}")
+                            current_proc_usable_vars.append(self.tokens[i].value)
+                            main_decs.append(self.tokens[i].value)
+                            proc_decs.append(self.tokens[i])
+                            proc_all_decs.append(proc_decs)
+                            proc_decs = []
+                        i += 1
+                procedure.append([])
+                procedure.append(proc_all_decs)
+                procedures.append(procedure)
+                if self.tokens[i].type == 'BEGIN':
+                    i += 1
+                    while self.tokens[i].type != 'END':
+                        if self.tokens[i].type == 'IDENTIFIER':
+                            if self.tokens[i + 1].type == '(':
+                                proc_name_call = self.tokens[i].value
+                                proc_is_declared = False
+                                proc_call_index = None
+                                for obj in range(len(procedures) - 1):
+                                    if procedures[obj][0][0] == proc_name_call:
+                                        proc_is_declared = True
+                                        proc_call_index = obj
+                                        break
+                                if not proc_is_declared:
+                                    raise Exception(f"Procedura {proc_name_call} nie została zainicjalizowana"
+                                                    f" | line : {self.tokens[i].lineno}")
+                                i += 2
+                                proc_call_vars_amount = 0
+                                while self.tokens[i].type != ')':
+                                    if self.tokens[i].type == 'IDENTIFIER':
+                                        if self.tokens[i].value in current_proc_usable_vars:
+                                            proc_call_vars_amount += 1
+                                        else:
+                                            raise Exception(f"Nie ma zmiennej {self.tokens[i].value}"
+                                                            f" w scopie procedury {procedure[0][0]} "
+                                                            f"| line: {self.tokens[i].lineno}")
+                                    i += 1
+                                if proc_call_vars_amount != len(procedures[proc_call_index][1]):
+                                    raise Exception(f"Zła ilość argumentów podanych w wywołaniu procedury "
+                                                    f"{procedures[proc_call_index][0][0]} "
+                                                    f"| line : {self.tokens[i].lineno}")
+                            else:
+                                if self.tokens[i].value not in current_proc_usable_vars:
+                                    raise Exception(f"Nie ma zmiennej {self.tokens[i].value}"
+                                                    f" w scopie procedury {procedure[0][0]} "
+                                                    f"| line: {self.tokens[i].lineno}")
+                        i += 1
 
     def prepare_memory(self):
         for procedure in self.procedures:
@@ -40,8 +194,6 @@ class Compiler:
             self.memory.set_procedure_recall_line(proc_name)
         for dec in self.main_prog.declarations:
             self.memory.set_program_variable(dec)
-        print(self.memory)
-        print(self.memory.procedures)
 
     def compile_procedures(self):
         for procedure in self.procedures:
@@ -83,16 +235,13 @@ class Compiler:
                     else:
                         raise Exception(f"Assign sie wysypalo")
             elif command[0] == "if_else":
-                # dorobic tutaj dla porownywania stalych typu (if 2<3 ... ) itp
                 condition_start = len(self.assembly)
                 self.check_condition(command[1], proc_name)
                 if_start = len(self.assembly)
                 self.generate_assembly(command[2], proc_name)
-                # self.assembly.append(f"[IF MET]")
                 self.assembly.append(f"JUMP Finish")
                 else_start = len(self.assembly)
                 self.generate_assembly(command[3], proc_name)
-                # self.assembly.append(f"[IF_ELSE FINISH]")
                 command_end = len(self.assembly)
                 self.assembly[else_start - 1] = self.assembly[else_start - 1].replace('Finish',
                                                                                       str(command_end))
@@ -107,7 +256,6 @@ class Compiler:
                 for i in range(condition_start, command_start):
                     self.assembly[i] = self.assembly[i].replace('Finish', str(command_end))
             elif command[0] == "while":
-                # print(f"WHILE: {command}")
                 condition_start = len(self.assembly)
                 self.check_condition(command[1], proc_name)
                 loop_start = len(self.assembly)
@@ -157,7 +305,7 @@ class Compiler:
                             raise Exception(f"Write sie wysypalo")
             elif command[0] in self.memory.procedures:
                 if command[0] == proc_name:
-                    raise Exception(f"Wywołanie rekurencyjne procedury {proc_name}")
+                    raise Exception(f"Wywołanie rekurencyjne procedury {proc_name} SEM ERR")
                 if proc_name == "Main":
                     proc_arg_indexes = []
                     proc_call_indexes = []
@@ -167,7 +315,7 @@ class Compiler:
                     for arg in command[1]:
                         proc_call_indexes.append(self.memory[arg])
                     if len(proc_arg_indexes) != len(proc_call_indexes):
-                        raise Exception(f"Zła ilość argumentów w wywołaniu funkcji {command[1]}")
+                        raise Exception(f"Zła ilość argumentów w wywołaniu funkcji {command[1]} SEM ERR")
                     for i in range(len(proc_call_indexes)):
                         self.assembly.append(f"SET {int(proc_call_indexes[i])}")
                         self.assembly.append(f"STORE {int(proc_arg_indexes[i])}")
@@ -178,8 +326,6 @@ class Compiler:
                     self.assembly.append(f"STORE {recall_index}")
                     self.assembly.append(f"JUMPI {proc_starting_line_index}")
                 else:
-                    # print(f"PROC CALL: {proc_name}")
-                    # print(f"PROC ARGS: {command[1]}")
                     proc_arg_indexes = []
                     proc_call_indexes = []
                     proc_call_names = []
@@ -187,7 +333,6 @@ class Compiler:
                         if proc_arg.startswith(f"Arg_{command[0]}_"):
                             proc_arg_indexes.append(self.memory[proc_arg])
 
-                    # print(f"PROC_ARG INDEXES :{proc_arg_indexes}")
                     for arg in command[1]:
                         if f"Int_{proc_name}_{arg}" in self.memory:
                             proc_call_indexes.append(self.memory[f"Int_{proc_name}_{arg}"])
@@ -196,10 +341,9 @@ class Compiler:
                             proc_call_indexes.append(self.memory[f"Arg_{proc_name}_{arg}"])
                             proc_call_names.append(f"Arg_{proc_name}_{arg}")
                         else:
-                            raise Exception(f"NO NIE WIEM?")
-                    # print(f"PROC_CALL_INDEXES: {proc_call_indexes}")
+                            raise Exception(f"nie wiem SEM ERR?")
                     if len(proc_arg_indexes) != len(proc_call_indexes):
-                        raise Exception(f"Zła ilość argumentów w wywołaniu funkcji {command[1]}")
+                        raise Exception(f"Zła ilość argumentów w wywołaniu funkcji {command[1]} SEM ERR")
                     for i in range(len(proc_call_indexes)):
                         if f"Arg_{proc_name}_" in proc_call_names[i]:
                             self.assembly.append(f"LOAD {int(proc_call_indexes[i])}")
@@ -213,7 +357,7 @@ class Compiler:
                     self.assembly.append(f"STORE {recall_index}")
                     self.assembly.append(f"JUMPI {proc_starting_line_index}")
             else:
-                raise Exception(f"Procedura {command[0]} nie została zainincjalizowana")
+                raise Exception(f"Procedura {command[0]} nie została zainincjalizowana SEM ERR")
 
     def calculate_expression(self, expression, proc_name):
         if proc_name == "Main":
@@ -587,7 +731,7 @@ class Compiler:
                     index = self.memory[var_name]
                     self.assembly.append(f"LOADI {index}")
                 else:
-                    raise Exception(f"Nie wiem kurwa : {var_name}")
+                    raise Exception(f"LOAD sie wysypalo SEM ERR")
             else:
                 if expression[1][0] == "const" and expression[2][0] == "load":
                     cons = int(expression[1][1])
@@ -601,7 +745,7 @@ class Compiler:
                         index = self.memory[var_name]
                         self.assembly.append(f"LOADI {index}")
                     else:
-                        raise Exception(f"Nie wiem kurwa2 : {var_name}")
+                        raise Exception(f"LOAD 2 SEM ERR")
                     self.assembly.append(f"STORE 2")
                 elif expression[1][0] == "load" and expression[2][0] == "const":
                     cons = int(expression[2][1])
@@ -615,7 +759,7 @@ class Compiler:
                         index = self.memory[var_name]
                         self.assembly.append(f"LOADI {index}")
                     else:
-                        raise Exception(f"Nie wiem kurwa3 : {var_name}")
+                        raise Exception(f"LOAD 3 SEM ERR")
                     self.assembly.append(f"STORE 1")
                 elif expression[1][0] == "const" and expression[2][0] == "const":
                     cons1 = int(expression[1][1])
@@ -634,7 +778,7 @@ class Compiler:
                         index = self.memory[var_name1]
                         self.assembly.append(f"LOADI {index}")
                     else:
-                        raise Exception(f"Nie wiem kurwa4 : {var_name1}")
+                        raise Exception(f"LOAD 4 SEM ERR")
                     self.assembly.append(f"STORE 1")
                     if var_name2.startswith("Int_"):
                         index = self.memory[var_name2]
@@ -643,7 +787,7 @@ class Compiler:
                         index = self.memory[var_name2]
                         self.assembly.append(f"LOADI {index}")
                     else:
-                        raise Exception(f"Nie wiem kurwa5 : {var_name2}")
+                        raise Exception(f"LOAD 5 SEM ERR")
                     self.assembly.append(f"STORE 2")
                 if expression[0] == "plus":
                     self.assembly.append(f"LOAD 1")

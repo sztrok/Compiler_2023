@@ -204,8 +204,8 @@ class CompilerParser(Parser):
     @_('IDENTIFIER')
     def value(self, p):
         self.is_used[p[0]] = True
-        if p[0] not in self.is_set:
-            print(f"WARNING: USING {p[0]} BEFORE SET")
+        # if p[0] not in self.is_set:
+        #     print(f"WARNING: USING {p[0]} BEFORE SET")
         return "load", p[0]
 
     def error(self, token):
