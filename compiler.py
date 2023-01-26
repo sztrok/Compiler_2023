@@ -8,7 +8,13 @@ from memory import Memory
 #
 
 class Compiler:
-    def __init__(self, procedures, main_prog):
+    def __init__(self, procedures, main_prog, tokens):
+        self.tokens = tokens
+        for tok in tokens:
+            print(tok)
+        print("---------------------")
+        for tok in tokens:
+            print(tok)
         self.procedures = procedures
         self.main_prog = main_prog
         self.commands = main_prog.commands

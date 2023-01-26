@@ -8,13 +8,17 @@ VAR b
 BEGIN
     a:=4;
     b:=8;
-    pb(a);
+    pa(a);
 END
 
 PROGRAM IS
 VAR a
 BEGIN
     a:=5;
-    pb(a);
+    IF 4>5 THEN
+        a:=2;
+    ELSE
+        a:=3;
+    ENDIF
     WRITE a;
 END
