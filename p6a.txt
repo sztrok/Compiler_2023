@@ -1,0 +1,21 @@
+PROCEDURE test(a) IS
+VAR b, c
+BEGIN
+  c := 0;
+  WHILE c < 5 DO
+    IF c = 0 THEN
+      b := 5;
+    ELSE
+      b := b + 5;
+    ENDIF
+    c := c + 1;
+  ENDWHILE
+  a := b;
+END
+
+PROGRAM IS
+VAR a
+BEGIN
+  test(a);
+  WRITE a;
+END

@@ -1,0 +1,20 @@
+PROCEDURE pa(c) IS
+BEGIN
+    c:=123;
+END
+
+PROCEDURE pb(a) IS
+VAR b
+BEGIN
+    a:=4;
+    b:=8;
+    pb(a);
+END
+
+PROGRAM IS
+VAR a
+BEGIN
+    a:=5;
+    pb(a);
+    WRITE a;
+END
