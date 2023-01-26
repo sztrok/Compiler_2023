@@ -34,8 +34,8 @@ class Compiler:
             self.memory.set_procedure_recall_line(proc_name)
         for dec in self.main_prog.declarations:
             self.memory.set_program_variable(dec)
-        # print(self.memory)
-        # print(self.memory.procedures)
+        print(self.memory)
+        print(self.memory.procedures)
 
     def compile_procedures(self):
         for procedure in self.procedures:
@@ -649,7 +649,7 @@ class Compiler:
             else:
                 if expression[1][0] == "const" and expression[2][0] == "load":
                     cons = int(expression[1][1])
-                    self.assembly.append(f"GET {cons}")
+                    self.assembly.append(f"SET {cons}")
                     self.assembly.append(f"STORE 1")
                     var_name = self.memory.get_variable_memory_index(expression[2][1], proc_name)
                     if var_name.startswith("Int_"):
