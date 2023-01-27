@@ -4,6 +4,7 @@
   i dzialaja w identyczny sposob, przez co *wszystkie* powinny
   skompilowac sie bez bledow
 ]
+
 PROCEDURE test(a) IS
 VAR b, c
 BEGIN

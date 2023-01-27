@@ -168,6 +168,7 @@ class Compiler:
                                 if self.tokens[i].value not in current_proc_usable_vars:
                                     raise Exception(f"Nie można sczytać wartości zmiennej {self.tokens[i].value}"
                                                     f" ponieważ zmienna nie jest zadeklarowana")
+                                proc_all_set_vars.append(self.tokens[i].value)
                             elif self.tokens[i - 1].type == 'WRITE':
                                 # print(proc_all_set_vars)
                                 if self.tokens[i].value not in proc_all_set_vars:
