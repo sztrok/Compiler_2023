@@ -1,3 +1,9 @@
+[
+  Przyklad / test uzycia zmiennej po przypisaniu
+  Wszystkie przypadki (a, b, c, d) sa semantycznie identycznie
+  i dzialaja w identyczny sposob, przez co *wszystkie* powinny
+  skompilowac sie bez bledow
+]
 PROCEDURE test(a) IS
 VAR b, c
 BEGIN

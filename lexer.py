@@ -1,5 +1,6 @@
 from sly import *
 
+comment_start_line = 0
 
 class CompilerLexer(Lexer):
     tokens = {PROCEDURE, IS, VAR, IDENTIFIER, BEGIN, END, PROGRAM, IF, THEN, ELSE, ENDIF, WHILE, DO,

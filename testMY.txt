@@ -1,14 +1,15 @@
-PROCEDURE pa(c) IS
+PROCEDURE pa(c, d) IS
 BEGIN
-    c:=123;
+    WRITE c;
 END
 
 PROCEDURE pb(a) IS
-VAR b
+VAR b, c, d
 BEGIN
     a:=4;
-    b:=8;
-    pa(a);
+    d:=3;
+
+    pa(a, b);
 END
 
 PROGRAM IS

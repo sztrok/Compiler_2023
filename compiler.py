@@ -73,6 +73,16 @@ class Compiler:
                     i += 1
                     while self.tokens[i].type != 'END':
                         if self.tokens[i].type == 'IDENTIFIER':
+                            if self.tokens[i - 1].type == 'READ':
+                                if self.tokens[i].value not in current_proc_usable_vars:
+                                    # print(self.tokens[i].value)
+                                    raise Exception(f"Nie można sczytać wartości zmiennej {self.tokens[i].value}"
+                                                    f" ponieważ zmienna nie jest zadeklarowana")
+                            elif self.tokens[i - 1].type == 'WRITE':
+                                # print(proc_all_set_vars)
+                                if self.tokens[i].value not in proc_all_set_vars:
+                                    raise Exception(f"Zmienna {self.tokens[i].value} nie została zainicjalizowana"
+                                                    f" | line : {self.tokens[i].lineno}")
                             if self.tokens[i + 1].type == '(':
                                 proc_name_call = self.tokens[i].value
                                 proc_is_declared = False
@@ -90,6 +100,7 @@ class Compiler:
                                 while self.tokens[i].type != ')':
                                     if self.tokens[i].type == 'IDENTIFIER':
                                         proc_all_used_vars.append(self.tokens[i])
+                                        proc_all_set_vars.append(self.tokens[i].value)
                                         if self.tokens[i].value in current_proc_usable_vars:
                                             proc_call_vars_amount += 1
                                         else:
@@ -102,6 +113,8 @@ class Compiler:
                                                     f"{procedures[proc_call_index][0][0]} "
                                                     f"| line : {self.tokens[i].lineno}")
                             else:
+
+
                                 if self.tokens[i+1].type == 'ASSIGN':
                                     proc_all_set_vars.append(self.tokens[i].value)
                                 proc_all_used_vars.append(self.tokens[i])
@@ -112,6 +125,8 @@ class Compiler:
 
                         i += 1
 
+                    # print(proc_all_set_vars)
+                    # print(proc_all_used_vars)
                     for used in proc_all_used_vars:
                         if used.value not in proc_all_set_vars:
                             raise Exception(f"Użycie nie zainicjalizowanej zmiennej {used.value} "
@@ -125,6 +140,8 @@ class Compiler:
                 i += 2
                 proc_all_decs = []
                 proc_decs = []
+                proc_all_set_vars = []
+                proc_all_used_vars = []
                 if self.tokens[i].value == 'VAR':
                     main_decs = []
                     i += 1
@@ -147,6 +164,15 @@ class Compiler:
                     i += 1
                     while self.tokens[i].type != 'END':
                         if self.tokens[i].type == 'IDENTIFIER':
+                            if self.tokens[i - 1].type == 'READ':
+                                if self.tokens[i].value not in current_proc_usable_vars:
+                                    raise Exception(f"Nie można sczytać wartości zmiennej {self.tokens[i].value}"
+                                                    f" ponieważ zmienna nie jest zadeklarowana")
+                            elif self.tokens[i - 1].type == 'WRITE':
+                                # print(proc_all_set_vars)
+                                if self.tokens[i].value not in proc_all_set_vars:
+                                    raise Exception(f"Zmienna {self.tokens[i].value} nie została zainicjalizowana"
+                                                    f" | line : {self.tokens[i].lineno}")
                             if self.tokens[i + 1].type == '(':
                                 proc_name_call = self.tokens[i].value
                                 proc_is_declared = False
@@ -163,6 +189,8 @@ class Compiler:
                                 proc_call_vars_amount = 0
                                 while self.tokens[i].type != ')':
                                     if self.tokens[i].type == 'IDENTIFIER':
+                                        proc_all_used_vars.append(self.tokens[i])
+                                        proc_all_set_vars.append(self.tokens[i].value)
                                         if self.tokens[i].value in current_proc_usable_vars:
                                             proc_call_vars_amount += 1
                                         else:
@@ -175,11 +203,18 @@ class Compiler:
                                                     f"{procedures[proc_call_index][0][0]} "
                                                     f"| line : {self.tokens[i].lineno}")
                             else:
+                                if self.tokens[i+1].type == 'ASSIGN':
+                                    proc_all_set_vars.append(self.tokens[i].value)
+                                proc_all_used_vars.append(self.tokens[i])
                                 if self.tokens[i].value not in current_proc_usable_vars:
                                     raise Exception(f"Nie ma zmiennej {self.tokens[i].value}"
                                                     f" w scopie procedury {procedure[0][0]} "
                                                     f"| line: {self.tokens[i].lineno}")
                         i += 1
+                    for used in proc_all_used_vars:
+                        if used.value not in proc_all_set_vars:
+                            raise Exception(f"Użycie nie zainicjalizowanej zmiennej {used.value} "
+                                            f"| line : {used.lineno}")
 
     def prepare_memory(self):
         for procedure in self.procedures:
