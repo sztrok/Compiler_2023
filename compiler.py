@@ -336,7 +336,8 @@ class Compiler:
                         if var_name.startswith("Int_"):
                             self.assembly.append(f"PUT {index}")
                         elif var_name.startswith("Arg_"):
-                            self.assembly.append(f"PUTI {index}")
+                            self.assembly.append(f"LOADI {index}")
+                            self.assembly.append(f"PUT 0")
                         else:
                             raise Exception(f"Write sie wysypalo")
             elif command[0] in self.memory.procedures:
